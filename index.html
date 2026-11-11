@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>바로고시스템 - 태성환경연구소</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM (안정적인 버전) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
+        .material-symbols-rounded { vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        /* 커스텀 스크롤바 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Icon = ({ name, size = 20, className = "" }) => (
+            <span className={`material-symbols-rounded ${className}`} style={{ fontSize: size }}>{name}</span>
+        );
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('overview');
+            const [selectedOdor, setSelectedOdor] = useState('vocs');
+
+            const navItems = [
+                { id: 'overview', label: '🏥 종합안내', icon: 'home' },
+                { id: 'intake', label: '📝 접수·문진', icon: 'assignment' },
+                { id: 'diagnosis', label: '🔬 AI 진단 및 설계', icon: 'stethoscope' },
+                { id: 'video', label: '📺 AI 영상 처방전', icon: 'smart_display' },
+                { id: 'management', label: '🌐 디지털트윈 관제', icon: 'bar_chart' },
+            ];
+
+            return (
+                <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
+                    <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-10 hidden md:flex">
+                        <div className="p-6 flex items-center gap-3 border-b border-slate-700">
+                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-600/30">B</div>
+                            <div>
+                                <h1 className="text-xl font-bold tracking-tight">바로고시스템<span className="text-blue-400">.</span></h1>
+                                <p className="text-xs text-slate-400">악취종합병원 AI 솔루션</p>
+                            </div>
+                        </div>
+                        
+                        <nav className="flex-1 py-6 px-4 space-y-2">
+                            {navItems.map((item) => {
+                                const isActive = activeTab === item.id;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveTab(item.id)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${
+                                            isActive ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                        }`}
+                                    >
+                                        <Icon name={item.icon} size={20} className={isActive ? 'text-blue-400' : ''} />
+                                        <span className="font-medium">{item.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+
+                        <div className="p-4 border-t border-slate-800">
+                            <div className="flex items-center gap-3 px-2 py-2">
+                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                                    <Icon name="person" size={16} />
+                                </div>
+                                <div className="text-sm">
+                                    <p className="font-medium text-slate-200">태성환경연구소</p>
+                                    <p className="text-xs text-slate-500">관리자 시연용</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <main className="flex-1 flex flex-col h-full overflow-hidden">
+                        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+                            <h2 className="text-lg font-semibold text-slate-800">
+                                {navItems.find(i => i.id === activeTab)?.label.split(' ')[1]}
+                            </h2>
+                            <div className="flex items-center gap-4">
+                                <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                                    <Icon name="notifications" size={24} />
+                                    <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                                </button>
+                                <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                                    <Icon name="settings" size={24} />
+                                </button>
+                            </div>
+                        </header>
+
+                        <div className="flex-1 overflow-auto p-8">
+                            <div className="max-w-6xl mx-auto">
+                                {activeTab === 'overview' && <OverviewView setActiveTab={setActiveTab} />}
+                                {activeTab === 'intake' && <IntakeView setActiveTab={setActiveTab} setSelectedOdor={setSelectedOdor} />}
+                                {activeTab === 'diagnosis' && <DiagnosisView selectedOdor={selectedOdor} />}
+                                {activeTab === 'video' && <VideoView selectedOdor={selectedOdor} />}
+                                {activeTab === 'management' && <ManagementView />}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        function OverviewView({ setActiveTab }) {
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-10 md:p-14 shadow-2xl">
+                        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+                        <div className="relative z-10 max-w-2xl">
+                            <span className="inline-block py-1 px-3 rounded-full bg-blue-500/20 text-blue-400 text-sm font-semibold mb-4 border border-blue-500/30">
+                                태성환경연구소 혁신 프로젝트
+                            </span>
+                            <h1 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
+                                진단 · 처방 · 관제 <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">악취종합병원 바로고시스템</span>
+                            </h1>
+                            <p className="text-slate-300 text-lg mb-8 leading-relaxed">
+                                인력 투입은 최소화하고 정확도는 극대화합니다. AI가 악취 성분을 분석하여 가장 완벽한 화학공학적 저감 솔루션을 즉각 처방합니다.
+                            </p>
+                            <button onClick={() => setActiveTab('intake')} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg">
+                                접수 시작하기 <Icon name="chevron_right" size={18} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                        {[
+                            { step: '01', title: '스마트 접수/문진', desc: 'IoT 센서 연동 및 기업 맞춤형 기초 데이터 입력', icon: 'assignment', color: 'text-blue-500', bg: 'bg-blue-50' },
+                            { step: '02', title: 'AI 진단 및 처방', desc: '화공 알고리즘 기반 1:1 맞춤형 저감장치 설계', icon: 'stethoscope', color: 'text-teal-600', bg: 'bg-teal-50' },
+                            { step: '03', title: '디지털 트윈 관제', desc: '악취 확산 역추적 시뮬레이션 및 예지보전', icon: 'bar_chart', color: 'text-indigo-500', bg: 'bg-indigo-50' }
+                        ].map((item, idx) => (
+                            <div key={idx} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+                                <div className={`w-14 h-14 rounded-2xl ${item.bg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                                    <Icon name={item.icon} size={28} className={item.color} />
+                                </div>
+                                <div className="text-5xl font-black text-slate-50 absolute top-4 right-4 z-0">{item.step}</div>
+                                <div className="relative z-10">
+                                    <h3 className="text-xl font-bold text-slate-800 mb-3">{item.title}</h3>
+                                    <p className="text-slate-500 leading-relaxed">{item.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function IntakeView({ setActiveTab, setSelectedOdor }) {
+            const [status, setStatus] = useState('idle');
+            const [odorType, setOdorType] = useState('vocs');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                setStatus('loading');
+                setTimeout(() => {
+                    setSelectedOdor(odorType);
+                    setActiveTab('diagnosis');
+                }, 1500);
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-fade-in">
+                    <div className="bg-slate-900 px-8 py-6 text-white">
+                        <h2 className="text-xl font-semibold flex items-center gap-2">
+                            <Icon name="assignment" size={22} className="text-emerald-400" /> 초기 기초 문진표 작성
+                        </h2>
+                        <p className="text-slate-400 text-sm mt-2">정확한 처방을 위해 배출원의 현장 정보를 입력해주세요.</p>
+                    </div>
+                    
+                    <form onSubmit={handleSubmit} className="p-8 space-y-8">
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Icon name="factory" size={18} className="text-slate-400" /> 사업장 업종
+                                    </label>
+                                    <select required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                                        <option value="">업종을 선택하세요</option>
+                                        <option value="chemical">화학물질 제조 (석유화학 등)</option>
+                                        <option value="waste">폐기물 처리업</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Icon name="air" size={18} className="text-slate-400" /> 주 체감 악취 (AI 진단 기준)
+                                    </label>
+                                    <select required value={odorType} onChange={(e) => setOdorType(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                                        <option value="vocs">고농도 VOCs (유증기 및 유기용제)</option>
+                                        <option value="complex">복합 악취 (황화수소, 암모니아 등)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Icon name="air" size={18} className="text-slate-400" /> 설계 풍량 (CMM)
+                                    </label>
+                                    <input type="number" required defaultValue="350" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Icon name="device_thermostat" size={18} className="text-slate-400" /> 배출 가스 온도 (℃)
+                                    </label>
+                                    <input type="number" required defaultValue="45" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="pt-4 flex justify-end">
+                            <button type="submit" disabled={status === 'loading'} className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-medium transition-colors">
+                                {status === 'loading' ? 'AI 화공 알고리즘 분석중...' : 'AI 진단 의뢰하기'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        }
+
+        function DiagnosisView({ selectedOdor }) {
+            const isVocs = selectedOdor === 'vocs';
+            
+            // 안전한 커스텀 CSS 프로파일 차트 데이터
+            const chartData = isVocs ? [
+                { subject: '톨루엔(VOC)', val: 95, color: 'bg-emerald-500' },
+                { subject: '자일렌(VOC)', val: 85, color: 'bg-emerald-500' },
+                { subject: '황화수소(H2S)', val: 20, color: 'bg-slate-400' },
+                { subject: '암모니아(NH3)', val: 10, color: 'bg-slate-400' }
+            ] : [
+                { subject: '황화수소(H2S)', val: 90, color: 'bg-blue-500' },
+                { subject: '암모니아(NH3)', val: 85, color: 'bg-blue-500' },
+                { subject: '톨루엔(VOC)', val: 30, color: 'bg-slate-400' },
+                { subject: '알데히드', val: 40, color: 'bg-slate-400' }
+            ];
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="bg-gradient-to-r from-blue-600 to-teal-500 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
+                            <div className="flex-1">
+                                <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-3 inline-block">AI 맞춤형 화학공학 솔루션</span>
+                                <h3 className="text-2xl font-bold mb-3">
+                                    {isVocs ? "물리적 응축 기반 VRU 설비 도입" : "폐음료 재활용 다공성 탄소 흡착제 적용"}
+                               </h3>
+                                <p className="text-blue-100 text-sm leading-relaxed">
+                                    {isVocs 
+                                        ? "입력된 고농도 VOCs 유량과 온도를 기반으로 유체역학적 차압 계산이 완료되었습니다. 물리적 응축 방식을 적용하여 VOCs를 회수하고 압력 손실을 최소화하는 최적의 시스템을 설계했습니다."
+                                        : "황화수소 및 산성 가스 제거를 위해 비표면적을 극대화한 폐음료 유래 다공성 탄소 흡착제를 처방합니다. 촉매 반응을 통해 99% 이상의 악취 제거 효율을 기대할 수 있습니다."}
+                                </p>
+                            </div>
+                            <div className="bg-white/10 rounded-2xl p-6 text-center w-full md:w-48">
+                                <div className="text-blue-100 text-sm mb-2 font-medium">예상 악취 제거 효율</div>
+                                <div className="text-5xl font-black text-white">{isVocs ? '95' : '99'}<span className="text-2xl">%</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* 100% 안전한 커스텀 프로파일 차트 */}
+                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                <Icon name="analytics" size={20} className="text-indigo-500" /> AI 다차원 악취 성분 분석
+                            </h3>
+                            <div className="space-y-5">
+                                {chartData.map((item, idx) => (
+                                    <div key={idx}>
+                                        <div className="flex justify-between text-sm mb-1 font-semibold text-slate-700">
+                                            <span>{item.subject}</span>
+                                            <span className="text-slate-500">{item.val}%</span>
+                                        </div>
+                                        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className={`h-full ${item.color} rounded-full transition-all duration-1000`} style={{ width: `${item.val}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 센서 데이터 */}
+                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                <Icon name="sensors" size={20} className="text-emerald-500" /> 실시간 센서 검출 현황
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold text-red-700">{isVocs ? '톨루엔 (고위험)' : '황화수소 (고위험)'}</span>
+                                        <span className="font-bold text-red-600">{isVocs ? '120.5 ppm' : '45.2 ppm'}</span>
+                                    </div>
+                                    <p className="text-xs text-red-500">화재 위험 방지 및 즉각적인 저감 처리 시급</p>
+                                </div>
+                                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold text-slate-700">배출 가스 온도</span>
+                                        <span className="font-bold text-slate-600">42.5 ℃</span>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold text-slate-700">상대 습도</span>
+                                        <span className="font-bold text-amber-600">85% (고습도)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function VideoView({ selectedOdor }) {
+            const isVocs = selectedOdor === 'vocs';
+            const videos = isVocs ? [
+                { id: 'T_mptCb0Qq8', title: "VRU 설비 시공 및 운영 사례", desc: "물리적 응축 고농도 VOCs 회수 솔루션" },
+                { id: 'rMtsyx46hDM', title: "실시간 VOCs 모니터링 시스템", desc: "유증기 유출 감지 자동화" },
+                { id: 'vq2-MdIsaiE', title: "스마트 플랜트 유체역학 설계", desc: "압력 손실 최소화 및 최적화" }
+            ] : [
+                { id: 'T_mptCb0Qq8', title: "복합 악취 정밀 측정 및 진단", desc: "다차원 매핑 진단 기법" },
+                { id: 'rMtsyx46hDM', title: "폐음료 재활용 다공성 흡착제", desc: "친환경 촉매 흡착 효율 실증" },
+                { id: 'vq2-MdIsaiE', title: "드론 활용 광역 악취 추적", desc: "풍향 기반 발원지 역추적" }
+            ];
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                        <div className="mb-8">
+                            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-2">
+                                <Icon name="smart_display" size={24} className="text-blue-600" /> 태성환경연구소 AI 영상 큐레이션
+                            </h3>
+                            <p className="text-slate-500 text-sm">해당 공정 솔루션 도입에 가장 적합한 3개의 영상을 AI가 선별했습니다.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {videos.map((video, idx) => (
+                                <a key={idx} href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" className="group block">
+                                    <div className="w-full aspect-video rounded-xl mb-4 relative overflow-hidden bg-slate-900">
+                                        <img src={`https://img.youtube.com/vi/${video.id}/hqdefault.jpg`} className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="w-14 h-14 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-blue-600/90 transition-colors">
+                                                <Icon name="play_arrow" size={36} className="text-white" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h4 className="font-bold text-slate-800 leading-tight mb-2 group-hover:text-blue-600 line-clamp-2">{video.title}</h4>
+                                    <p className="text-sm text-slate-500 line-clamp-1">{video.desc}</p>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function ManagementView() {
+            // 안전한 커스텀 트렌드 차트용 데이터
+            const trendData = [30, 25, 45, 85, 140, 60, 35];
+            const maxVal = 150;
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg flex items-center gap-4">
+                        <div className="bg-white/20 p-3 rounded-full"><Icon name="warning" size={28} /></div>
+                        <div>
+                            <span className="bg-white/20 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">AI 예지보전 알림</span>
+                            <h3 className="text-xl font-bold">세정집진기 pH 농도 저하 감지</h3>
+                            <p className="text-amber-100 mt-1">48시간 내 흡착제 및 약품(NaOH) 보충 요망.</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                            <Icon name="monitoring" size={20} className="text-blue-500" /> 실시간 배출량 역추적 트렌드 (CSS 차트)
+                        </h3>
+                        {/* 100% 안전한 커스텀 막대 트렌드 차트 */}
+                        <div className="flex items-end gap-3 h-56 mt-8 border-b border-slate-200 pb-2 relative">
+                            <div className="absolute top-8 left-0 w-full border-t-2 border-dashed border-red-400 z-0"></div>
+                            <span className="absolute top-2 left-0 text-xs text-red-500 font-bold">배출허용기준</span>
+                            {trendData.map((val, idx) => (
+                                <div key={idx} className="flex-1 flex flex-col justify-end group z-10">
+                                    <div className="text-center text-xs font-bold text-slate-500 mb-2">{val}</div>
+                                    <div className={`w-full rounded-t-lg transition-all duration-700 ${val > 100 ? 'bg-red-500' : 'bg-blue-400'}`} style={{ height: `${(val / maxVal) * 100}%` }}></div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-between text-xs text-slate-400 mt-2 px-4">
+                            <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
