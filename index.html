@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>바로고시스템 - 태성환경연구소</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Pretendard Font -->
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+        
+        /* View Transition Animations */
+        .view-enter { animation: viewFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes viewFadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SVG Radar & Area Chart Animations */
+        .radar-poly { transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .area-line-anim {
+            stroke-dasharray: 2000;
+            stroke-dashoffset: 2000;
+            animation: drawLine 1.8s ease-out forwards;
+        }
+        .area-fill-anim {
+            opacity: 0;
+            animation: fadeInFill 1.2s ease-out 0.4s forwards;
+        }
+        @keyframes drawLine { to { stroke-dashoffset: 0; } }
+        @keyframes fadeInFill { to { opacity: 1; } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ==========================================
+        // 1. Lucide Icons (영상 속 원본 벡터 아이콘 완벽 구현)
+        // ==========================================
+        const SvgIcon = ({ size = 20, className = "", children }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const Home = (p) => <SvgIcon {...p}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></SvgIcon>;
+        const ClipboardList = (p) => <SvgIcon {...p}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></SvgIcon>;
+        const Stethoscope = (p) => <SvgIcon {...p}><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></SvgIcon>;
+        const Video = (p) => <SvgIcon {...p}><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></SvgIcon>;
+        const BarChart3 = (p) => <SvgIcon {...p}><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></SvgIcon>;
+        const User = (p) => <SvgIcon {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></SvgIcon>;
+        const Bell = (p) => <SvgIcon {...p}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></SvgIcon>;
+        const Settings = (p) => <SvgIcon {...p}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></SvgIcon>;
+        const ChevronRight = (p) => <SvgIcon {...p}><path d="m9 18 6-6-6-6"/></SvgIcon>;
+        const CheckCircle2 = (p) => <SvgIcon {...p}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></SvgIcon>;
+        const CheckCircle = (p) => <SvgIcon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></SvgIcon>;
+        const AlertTriangle = (p) => <SvgIcon {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></SvgIcon>;
+        const Activity = (p) => <SvgIcon {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></SvgIcon>;
+        const Wind = (p) => <SvgIcon {...p}><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></SvgIcon>;
+        const Thermometer = (p) => <SvgIcon {...p}><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></SvgIcon>;
+        const Factory = (p) => <SvgIcon {...p}><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></SvgIcon>;
+        const PlayCircle = (p) => <SvgIcon {...p}><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></SvgIcon>;
+        const FileText = (p) => <SvgIcon {...p}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></SvgIcon>;
+
+        // ==========================================
+        // 2. Custom SVG Charts (영상 속 Recharts 100% 재현)
+        // ==========================================
+        
+        // 다차원 악취 지문 레이더 차트
+        function OdorRadarChart({ data }) {
+            const [hoverIdx, setHoverIdx] = useState(null);
+            const cx = 250;
+            const cy = 165;
+            const R = 115;
+            const levels = [25, 50, 75, 100];
+
+            // 6각형 각도 계산 (상단 -90도부터 시계방향)
+            const getPoint = (val, idx) => {
+                const angle = (-90 + idx * 60) * (Math.PI / 180);
+                const r = (val / 100) * R;
+                return {
+                    x: cx + r * Math.cos(angle),
+                    y: cy + r * Math.sin(angle)
+                };
+            };
+
+            const polyPoints = data.map((d, i) => {
+                const pt = getPoint(d.A, i);
+                return `${pt.x},${pt.y}`;
+            }).join(' ');
+
+            return (
+                <div className="relative w-full h-80 flex items-center justify-center select-none">
+                    <svg viewBox="0 0 500 330" className="w-full h-full max-w-lg overflow-visible">
+                        {/* 6각형 그리드 배경 */}
+                        {levels.map((lvl) => {
+                            const pts = [0, 1, 2, 3, 4, 5].map(i => {
+                                const pt = getPoint(lvl, i);
+                                return `${pt.x},${pt.y}`;
+                            }).join(' ');
+                            return <polygon key={lvl} points={pts} fill="none" stroke="#e2e8f0" strokeWidth="1" />;
+                        })}
+
+                        {/* 중심에서 꼭짓점으로 뻗는 축선 */}
+                        {[0, 1, 2, 3, 4, 5].map(i => {
+                            const pt = getPoint(100, i);
+                            return <line key={i} x1={cx} y1={cy} x2={pt.x} y2={pt.y} stroke="#e2e8f0" strokeWidth="1" />;
+                        })}
+
+                        {/* 반경 수치 텍스트 (0, 25, 50, 75, 100) */}
+                        {[0, 25, 50, 75, 100].map((lvl) => {
+                            const angle = -30 * (Math.PI / 180); // 우측 상단 축 기준 표시
+                            const r = (lvl / 100) * R;
+                            const tx = cx + r * Math.cos(angle);
+                            const ty = cy + r * Math.sin(angle);
+                            return (
+                                <text key={lvl} x={tx} y={ty - 4} fill="#94a3b8" fontSize="10" textAnchor="middle">
+                                    {lvl}
+                                </text>
+                            );
+                        })}
+
+                        {/* 측정 데이터 다각형 */}
+                        <polygon points={polyPoints} fill="#10b981" fillOpacity="0.4" stroke="#10b981" strokeWidth="2" className="radar-poly" />
+
+                        {/* 각 항목 라벨 및 호버 포인트 */}
+                        {data.map((d, i) => {
+                            const labelPt = getPoint(122, i);
+                            const dataPt = getPoint(d.A, i);
+                            let anchor = "middle";
+                            if (i === 1 || i === 2) anchor = "start";
+                            if (i === 4 || i === 5) anchor = "end";
+
+                            return (
+                                <g key={i}>
+                                    <text 
+                                        x={labelPt.x} 
+                                        y={labelPt.y + 4} 
+                                        fill="#475569" 
+                                        fontSize="12" 
+                                        fontWeight="600" 
+                                        textAnchor={anchor}
+                                    >
+                                        {d.subject}
+                                    </text>
+                                    <circle 
+                                        cx={dataPt.x} 
+                                        cy={dataPt.y} 
+                                        r="5" 
+                                        fill="#10b981" 
+                                        className="cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
+                                        onMouseEnter={() => setHoverIdx(i)}
+                                        onMouseLeave={() => setHoverIdx(null)}
+                                    />
+                                </g>
+                            );
+                        })}
+                    </svg>
+
+                    {/* 툴팁 */}
+                    {hoverIdx !== null && (
+                        <div className="absolute bg-white/95 backdrop-blur px-3 py-2 rounded-lg shadow-md border border-slate-200 text-xs pointer-events-none top-4 right-4">
+                            <p className="font-bold text-slate-700">{data[hoverIdx].subject}</p>
+                            <p className="text-emerald-600 font-semibold">측정치 : {data[hoverIdx].A}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // 실시간 VOCs 배출량 트렌드 영역 차트
+        function VocsTrendChart({ data }) {
+            const [hoverIdx, setHoverIdx] = useState(null);
+            const width = 650;
+            const height = 260;
+            const padL = 42;
+            const padR = 20;
+            const padT = 20;
+            const padB = 45;
+
+            const plotW = width - padL - padR;
+            const plotH = height - padT - padB;
+            const maxY = 160;
+
+            const getCoords = (val, idx) => {
+                const x = padL + (idx / (data.length - 1)) * plotW;
+                const y = padT + plotH - (val / maxY) * plotH;
+                return { x, y };
+            };
+
+            const pts = data.map((d, i) => getCoords(d.vocs, i));
+
+            // 부드러운 곡선(Monotone Cubic Bezier) 경로 생성
+            const buildSmoothPath = (points) => {
+                if (points.length === 0) return "";
+                let d = `M ${points[0].x},${points[0].y}`;
+                for (let i = 0; i < points.length - 1; i++) {
+                    const p0 = points[i];
+                    const p1 = points[i + 1];
+                    const cpx1 = p0.x + (p1.x - p0.x) * 0.45;
+                    const cpy1 = p0.y;
+                    const cpx2 = p0.x + (p1.x - p0.x) * 0.55;
+                    const cpy2 = p1.y;
+                    d += ` C ${cpx1},${cpy1} ${cpx2},${cpy2} ${p1.x},${p1.y}`;
+                }
+                return d;
+            };
+
+            const linePath = buildSmoothPath(pts);
+            const baseLineY = padT + plotH;
+            const areaPath = `${linePath} L ${pts[pts.length - 1].x},${baseLineY} L ${pts[0].x},${baseLineY} Z`;
+            const limitY = getCoords(100, 0).y;
+
+            return (
+                <div className="relative w-full h-72 select-none">
+                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+                        <defs>
+                            <linearGradient id="colorVocs" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10b981" stopOpacity="0.3"/>
+                                <stop offset="95%" stopColor="#10b981" stopOpacity="0.0"/>
+                            </linearGradient>
+                        </defs>
+
+                        {/* Y축 그리드 라인 및 수치 (0, 40, 80, 120, 160) */}
+                        {[0, 40, 80, 120, 160].map((val) => {
+                            const y = padT + plotH - (val / maxY) * plotH;
+                            return (
+                                <g key={val}>
+                                    <line x1={padL} y1={y} x2={width - padR} y2={y} stroke="#e2e8f0" strokeDasharray="3 3" />
+                                    <text x={padL - 10} y={y + 4} fill="#64748b" fontSize="11" textAnchor="end">{val}</text>
+                                </g>
+                            );
+                        })}
+
+                        {/* X축 시간 라벨 */}
+                        {data.map((d, i) => {
+                            const { x } = getCoords(0, i);
+                            return (
+                                <text key={i} x={x} y={baseLineY + 22} fill="#64748b" fontSize="11" textAnchor="middle">
+                                    {d.time}
+                                </text>
+                            );
+                        })}
+
+                        {/* 그라데이션 영역 채우기 */}
+                        <path d={areaPath} fill="url(#colorVocs)" className="area-fill-anim" />
+
+                        {/* VOCs 농도 파란색 곡선 */}
+                        <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="3" className="area-line-anim" />
+
+                        {/* 배출허용기준 빨간색 점선 (100 ppm) */}
+                        <line x1={padL} y1={limitY} x2={width - padR} y2={limitY} stroke="#ef4444" strokeWidth="2" strokeDasharray="5 5" />
+
+                        {/* 마우스 인터랙션 영역 */}
+                        {pts.map((pt, i) => (
+                            <g key={i}>
+                                {hoverIdx === i && (
+                                    <>
+                                        <line x1={pt.x} y1={padT} x2={pt.x} y2={baseLineY} stroke="#cbd5e1" strokeDasharray="3 3" />
+                                        <circle cx={pt.x} cy={pt.y} r="5" fill="#3b82f6" stroke="#ffffff" strokeWidth="2" />
+                                    </>
+                                )}
+                                <rect 
+                                    x={pt.x - plotW / (data.length * 2)} 
+                                    y={padT} 
+                                    width={plotW / data.length} 
+                                    height={plotH} 
+                                    fill="transparent" 
+                                    className="cursor-pointer"
+                                    onMouseEnter={() => setHoverIdx(i)}
+                                    onMouseLeave={() => setHoverIdx(null)}
+                                />
+                            </g>
+                        ))}
+                    </svg>
+
+                    {/* 하단 범례 (Legend) */}
+                    <div className="flex items-center justify-center gap-6 text-xs font-medium -mt-3">
+                        <div className="flex items-center gap-1.5 text-blue-500">
+                            <span className="inline-block w-3.5 h-0.5 bg-blue-500 relative">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 absolute -top-0.5 left-1"></span>
+                            </span>
+                            <span>VOCs 농도 (ppm)</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-red-500">
+                            <span className="inline-block w-3.5 border-b-2 border-dashed border-red-500"></span>
+                            <span>배출허용기준</span>
+                        </div>
+                    </div>
+
+                    {/* 차트 호버 툴팁 */}
+                    {hoverIdx !== null && (
+                        <div 
+                            className="absolute bg-white px-3.5 py-2.5 rounded-xl shadow-lg border border-slate-100 text-xs pointer-events-none transition-all z-20"
+                            style={{ 
+                                left: `${Math.min(Math.max((hoverIdx / (data.length - 1)) * 80 + 5, 10), 75)}%`, 
+                                top: '20px' 
+                            }}
+                        >
+                            <p className="font-bold text-slate-700 mb-1">{data[hoverIdx].time}</p>
+                            <p className="text-blue-600 font-semibold">VOCs 농도 (ppm) : {data[hoverIdx].vocs}</p>
+                            <p className="text-red-500 font-semibold">배출허용기준 : {data[hoverIdx].limit}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // ==========================================
+        // 3. 메인 애플리케이션 컴포넌트 (영상과 100% 일치)
+        // ==========================================
+        function BareugoApp() {
+            const [activeTab, setActiveTab] = useState('overview');
+            const [selectedOdor, setSelectedOdor] = useState('vocs');
+
+            const navItems = [
+                { id: 'overview', label: '🏥 종합안내', icon: Home },
+                { id: 'intake', label: '📝 접수·문진', icon: ClipboardList },
+                { id: 'diagnosis', label: '🔬 AI 진단 및 설계', icon: Stethoscope },
+                { id: 'video', label: '📺 AI 영상 처방전', icon: Video },
+                { id: 'management', label: '🌐 디지털트윈 관제', icon: BarChart3 },
+            ];
+
+            return (
+                <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
+                    {/* Sidebar */}
+                    <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-10 shrink-0">
+                        <div className="p-6 flex items-center gap-3 border-b border-slate-700">
+                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-600/30">B</div>
+                            <div>
+                                <h1 className="text-xl font-bold tracking-tight">바로고시스템<span className="text-blue-400">.</span></h1>
+                                <p className="text-xs text-slate-400">악취종합병원 AI 솔루션</p>
+                            </div>
+                        </div>
+                        
+                        <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
+                            {navItems.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = activeTab === item.id;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveTab(item.id)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${
+                                            isActive 
+                                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-sm' 
+                                                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                        }`}
+                                    >
+                                        <Icon size={20} className={isActive ? 'text-blue-400' : ''} />
+                                        <span className="font-medium text-sm">{item.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+
+                        <div className="p-4 border-t border-slate-800">
+                            <div className="flex items-center gap-3 px-2 py-2">
+                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                                    <User size={16} />
+                                </div>
+                                <div className="text-sm">
+                                    <p className="font-medium text-slate-200">태성환경연구소</p>
+                                    <p className="text-xs text-slate-500">관리자 계정</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 flex flex-col h-full overflow-hidden">
+                        {/* Top Header */}
+                        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+                            <h2 className="text-lg font-semibold text-slate-800">
+                                {navItems.find(i => i.id === activeTab)?.label.split(' ')[1]}
+                            </h2>
+                            <div className="flex items-center gap-4">
+                                <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                                    <Bell size={20} />
+                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                                </button>
+                                <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                                    <Settings size={20} />
+                                </button>
+                            </div>
+                        </header>
+
+                        {/* Dynamic Content Area */}
+                        <div className="flex-1 overflow-auto p-8">
+                            <div className="max-w-6xl mx-auto">
+                                {activeTab === 'overview' && <OverviewView setActiveTab={setActiveTab} />}
+                                {activeTab === 'intake' && <IntakeView setActiveTab={setActiveTab} setSelectedOdor={setSelectedOdor} />}
+                                {activeTab === 'diagnosis' && <DiagnosisView selectedOdor={selectedOdor} />}
+                                {activeTab === 'video' && <VideoView selectedOdor={selectedOdor} />}
+                                {activeTab === 'management' && <ManagementView />}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        // 1. 종합안내 (Overview)
+        function OverviewView({ setActiveTab }) {
+            return (
+                <div className="space-y-8 view-enter">
+                    <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-10 md:p-14 shadow-2xl">
+                        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+                        <div className="relative z-10 max-w-2xl">
+                            <span className="inline-block py-1 px-3 rounded-full bg-blue-500/20 text-blue-400 text-sm font-semibold mb-4 border border-blue-500/30">
+                                태성환경연구소 혁신 프로젝트
+                            </span>
+                            <h1 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
+                                진단 · 처방 · 관제 <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">
+                                    악취종합병원 바로고시스템
+                                </span>
+                            </h1>
+                            <p className="text-slate-300 text-lg mb-8 leading-relaxed">
+                                인력 투입은 최소화하고 정확도는 극대화합니다. AI가 악취 성분을 분석하여 가장 완벽한 화학공학적 저감 솔루션을 즉각 처방합니다.
+                            </p>
+                            <button 
+                                onClick={() => setActiveTab('intake')}
+                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg shadow-blue-600/30"
+                            >
+                                접수 시작하기 <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                        {[
+                            { step: '01', title: '스마트 접수/문진', desc: 'IoT 센서 연동 및 기업 맞춤형 기초 데이터(유량, 온도 등) 입력', icon: ClipboardList, color: 'text-blue-500', bg: 'bg-blue-50' },
+                            { step: '02', title: 'AI 진단 및 처방', desc: '화공 알고리즘 기반 1:1 맞춤형 저감장치 설계 및 영상 큐레이션', icon: Stethoscope, color: 'text-teal-600', bg: 'bg-teal-50' },
+                            { step: '03', title: '디지털 트윈 관제', desc: '악취 확산 역추적 시뮬레이션 및 예지보전 시스템', icon: BarChart3, color: 'text-indigo-500', bg: 'bg-indigo-50' }
+                        ].map((item, idx) => (
+                            <div key={idx} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+                                <div className={`w-14 h-14 rounded-2xl ${item.bg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                                    <item.icon className={item.color} size={28} />
+                                </div>
+                                <div className="text-5xl font-black text-slate-50 absolute top-4 right-4 z-0">{item.step}</div>
+                                <div className="relative z-10">
+                                    <h3 className="text-xl font-bold text-slate-800 mb-3">{item.title}</h3>
+                                    <p className="text-slate-500 leading-relaxed text-sm">{item.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // 2. 접수·문진 (Intake)
+        function IntakeView({ setActiveTab, setSelectedOdor }) {
+            const [status, setStatus] = useState('idle');
+            const [odorType, setOdorType] = useState('vocs');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                setStatus('loading');
+                setTimeout(() => {
+                    setSelectedOdor(odorType);
+                    setActiveTab('diagnosis');
+                }, 1500);
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden view-enter">
+                    <div className="bg-slate-900 px-8 py-6 text-white">
+                        <h2 className="text-xl font-semibold flex items-center gap-2">
+                            <ClipboardList size={22} className="text-emerald-400" />
+                            초기 기초 문진표 작성
+                        </h2>
+                        <p className="text-slate-400 text-sm mt-2">정확한 처방을 위해 배출원의 현장 정보를 입력해주세요.</p>
+                    </div>
+                    
+                    <form onSubmit={handleSubmit} className="p-8 space-y-8">
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Factory size={16} className="text-slate-400" /> 사업장 업종
+                                    </label>
+                                    <select required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all">
+                                        <option value="">업종을 선택하세요</option>
+                                        <option value="chemical">화학물질 제조 (석유화학 등)</option>
+                                        <option value="plating">표면처리 및 도금</option>
+                                        <option value="food">식품 제조 및 가공</option>
+                                        <option value="waste">폐기물 처리업</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Wind size={16} className="text-slate-400" /> 주 체감 악취 (AI 진단 기준)
+                                    </label>
+                                    <select required value={odorType} onChange={(e) => setOdorType(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all">
+                                        <option value="vocs">고농도 VOCs (유증기 및 유기용제)</option>
+                                        <option value="complex">복합 악취 (황화수소, 암모니아 등)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Wind size={16} className="text-slate-400" /> 설계 풍량 (CMM)
+                                    </label>
+                                    <input type="number" required placeholder="예: 300" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <Thermometer size={16} className="text-slate-400" /> 배출 가스 온도 (℃)
+                                    </label>
+                                    <input type="number" required placeholder="예: 45" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-4 flex justify-end">
+                            <button 
+                                type="submit" 
+                                disabled={status === 'loading'}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 disabled:opacity-70"
+                            >
+                                {status === 'loading' ? (
+                                    <><Activity className="animate-spin" size={20} /> AI 분석 진행중...</>
+                                ) : (
+                                    'AI 진단 의뢰하기'
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        }
+
+        // 3. 진단센터 (Diagnosis)
+        function DiagnosisView({ selectedOdor }) {
+            const isVocs = selectedOdor === 'vocs';
+            
+            const radarData = isVocs ? [
+                { subject: '톨루엔(VOC)', A: 95, fullMark: 100 },
+                { subject: '자일렌(VOC)', A: 85, fullMark: 100 },
+                { subject: '벤젠(VOC)', A: 70, fullMark: 100 },
+                { subject: '황화수소(H2S)', A: 20, fullMark: 100 },
+                { subject: '암모니아(NH3)', A: 10, fullMark: 100 },
+                { subject: '기타(지방산)', A: 15, fullMark: 100 },
+            ] : [
+                { subject: '황화수소(H2S)', A: 90, fullMark: 100 },
+                { subject: '암모니아(NH3)', A: 85, fullMark: 100 },
+                { subject: '메틸메르캅탄', A: 75, fullMark: 100 },
+                { subject: '아민류', A: 60, fullMark: 100 },
+                { subject: '톨루엔(VOC)', A: 30, fullMark: 100 },
+                { subject: '기타(알데히드)', A: 40, fullMark: 100 },
+            ];
+
+            return (
+                <div className="space-y-6 view-enter">
+                    {/* AI Solution Prescription Banner */}
+                    <div className="bg-gradient-to-r from-blue-600 to-teal-500 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+                        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-64 h-64 bg-white opacity-10 rounded-full blur-2xl"></div>
+                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <CheckCircle size={20} className="text-teal-200" />
+                                    <span className="text-teal-100 font-semibold tracking-wide">AI 맞춤형 화학공학 솔루션</span>
+                                </div>
+                                <h3 className="text-2xl font-bold mb-4 leading-snug">
+                                    {isVocs 
+                                        ? "물리적 응축 기반 VRU(Vapour Recovery Unit) 설비 도입"
+                                        : "폐음료 재활용 다공성 탄소 흡착제 및 알칼리 금속염(MgO) 적용"}
+                                </h3>
+                                <p className="text-blue-100 text-sm leading-relaxed">
+                                    {isVocs 
+                                        ? "입력된 고농도 VOCs 유량과 온도를 기반으로 유체역학적 차압 계산이 완료되었습니다. 물리적 응축 방식을 적용하여 VOCs를 회수하고 압력 손실을 최소화하는 최적의 VRU 시스템을 설계했습니다."
+                                        : "황화수소 및 산성 가스 제거를 위해 비표면적을 극대화한 폐음료 유래 다공성 탄소 흡착제를 처방합니다. 촉매 반응을 통해 99% 이상의 악취 제거 효율을 기대할 수 있습니다."}
+                                </p>
+                            </div>
+                            
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shrink-0 w-full md:w-64 text-center">
+                                <div className="text-blue-100 text-sm mb-2 font-medium">예상 악취 제거 효율</div>
+                                <div className="text-5xl font-black text-white mb-2">{isVocs ? '95' : '99'}<span className="text-2xl">%</span></div>
+                                <div className="text-teal-200 text-xs flex items-center justify-center gap-1">
+                                    <Activity size={14} /> AI 최적화 연산 완료
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Alert Banner */}
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg flex items-start gap-4">
+                        <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={24} />
+                        <div>
+                            <h3 className="font-bold text-red-800">AI 판독 결과 요약 (위험도: 높음)</h3>
+                            <p className="text-red-600 mt-1 text-sm">
+                                {isVocs 
+                                    ? "고농도 톨루엔 및 자일렌(VOCs) 유증기 발생이 확인되었습니다. 화재 위험 방지 및 유기용제 회수를 위한 물리적 응축 처리가 시급합니다."
+                                    : "황화수소(H2S) 및 암모니아(NH3) 중심의 고농도 복합 악취 발생이 확인되었습니다. 화학적 흡착 처리가 강력히 요구되는 상태입니다."}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Radar Chart Area */}
+                        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                <Activity size={20} className="text-indigo-500" /> AI 다차원 악취 지문 (Odor Fingerprint)
+                            </h3>
+                            <OdorRadarChart data={radarData} />
+                        </div>
+
+                        {/* Real-time Sensor Data */}
+                        <div className="space-y-4">
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                                <h3 className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-wider">주요 검출 물질 수치</h3>
+                                <div className="space-y-4">
+                                    {[
+                                        { name: '황화수소', val: '45.2', unit: 'ppm', status: '위험', color: 'text-red-500', bar: 'bg-red-500', width: 'w-[85%]' },
+                                        { name: '톨루엔', val: '120.5', unit: 'ppm', status: '위험', color: 'text-red-500', bar: 'bg-red-500', width: 'w-[90%]' },
+                                        { name: '메틸메르캅탄', val: '2.8', unit: 'ppm', status: '경고', color: 'text-orange-500', bar: 'bg-orange-500', width: 'w-[75%]' },
+                                        { name: '암모니아', val: '1.2', unit: 'ppm', status: '정상', color: 'text-emerald-500', bar: 'bg-emerald-500', width: 'w-[30%]' },
+                                    ].map((item, idx) => (
+                                        <div key={idx} className="space-y-1">
+                                            <div className="flex justify-between items-end">
+                                                <span className="font-medium text-slate-700">{item.name}</span>
+                                                <span className="text-sm"><strong className={item.color}>{item.val}</strong> {item.unit}</span>
+                                            </div>
+                                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                <div className={`h-full ${item.bar} ${item.width} rounded-full`}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-lg">
+                                <h4 className="text-slate-400 text-sm mb-2">물리화학적 환경 특성</h4>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-slate-300">배출 가스 온도</span>
+                                    <span className="font-bold">42.5 ℃</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-300">상대 습도</span>
+                                    <span className="font-bold text-amber-400">85% (고습도 경고)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 4. AI 맞춤형 영상 처방전 (VideoView)
+        function VideoView({ selectedOdor }) {
+            const isVocs = selectedOdor === 'vocs';
+            
+            const recommendedVideos = isVocs ? [
+                {
+                    id: 1,
+                    title: "VRU(Vapour Recovery Unit) 설비 시공 및 운영 사례",
+                    desc: "물리적 응축을 통한 고농도 VOCs 완벽 회수 솔루션",
+                    videoId: "T_mptCb0Qq8" 
+                },
+                {
+                    id: 2,
+                    title: "실시간 VOCs 모니터링 시스템 구축 (AIR FAIR)",
+                    desc: "유증기 유출 실시간 감지 및 경고 자동화 시스템",
+                    videoId: "rMtsyx46hDM" 
+                },
+                {
+                    id: 3,
+                    title: "스마트 플랜트(Smart Plant)를 위한 유체역학 설계",
+                    desc: "압력 손실 최소화를 위한 배관 및 팬(Fan) 최적화",
+                    videoId: "vq2-MdIsaiE" 
+                }
+            ] : [
+                {
+                    id: 1,
+                    title: "복합 악취(H2S, NH3) 정밀 측정 및 진단 기법",
+                    desc: "인간이 느끼는 취기 수준 분석 및 다차원 매핑",
+                    videoId: "T_mptCb0Qq8" 
+                },
+                {
+                    id: 2,
+                    title: "폐음료 재활용 다공성 탄소 흡착제 적용 실증",
+                    desc: "ESG 경영을 위한 친환경 흡착제 개발 및 촉매 효율",
+                    videoId: "rMtsyx46hDM" 
+                },
+                {
+                    id: 3,
+                    title: "드론(Drone) 활용 광역 악취 3D 추적 시스템",
+                    desc: "산단 지역 풍향 기반 악취 발원지 역추적 기술",
+                    videoId: "vq2-MdIsaiE" 
+                }
+            ];
+
+            return (
+                <div className="space-y-6 view-enter">
+                    {/* Client Report Header */}
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">진단 리포트 #TS-2611</span>
+                                <h2 className="text-2xl font-bold text-slate-800">울산 A화학공장</h2>
+                            </div>
+                            <p className="text-slate-600 flex items-center gap-2 text-sm">
+                                <AlertTriangle size={16} className="text-amber-500" />
+                                <strong className="text-slate-700">핵심 이슈:</strong> {isVocs ? "고농도 VOCs 복합 유증기 발생" : "황화수소(H2S) 및 복합 악취 발생"}
+                            </p>
+                        </div>
+                        <button className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-800 transition-colors">
+                            <FileText size={18} /> 상세 진단서 열람
+                        </button>
+                    </div>
+
+                    {/* Video Curation Grid */}
+                    <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                        <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-2">
+                                    <Video size={24} className="text-blue-600" /> 
+                                    태성환경연구소 AI 영상 큐레이션
+                                </h3>
+                                <p className="text-slate-500 text-sm">
+                                    당사가 보유한 230개의 공식 교육/시공 영상 중, <strong className="text-slate-700">A화학공장의 솔루션 도입에 가장 적합한 3개의 레퍼런스 영상</strong>을 AI가 선별했습니다.
+                                </p>
+                            </div>
+                            <a href="https://youtube.com/channel/UC_5t3_KQaKtcwhgy-CHgAEw" target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm font-medium hover:underline flex items-center gap-1 whitespace-nowrap">
+                                전체 영상 보기 <ChevronRight size={16} />
+                            </a>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {recommendedVideos.map((video) => (
+                                <a 
+                                    key={video.id} 
+                                    href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="group block cursor-pointer"
+                                >
+                                    <div className="w-full aspect-video rounded-xl mb-4 relative overflow-hidden shadow-sm group-hover:shadow-lg transition-all bg-slate-900 border border-slate-200">
+                                        <img 
+                                            src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`} 
+                                            alt={video.title}
+                                            className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="w-14 h-14 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-blue-600/90 transition-colors duration-300 shadow-lg">
+                                                <PlayCircle size={32} className="text-white ml-0.5" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <h4 className="font-bold text-slate-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                                            {video.title}
+                                        </h4>
+                                        <p className="text-sm text-slate-500 line-clamp-1">
+                                            {video.desc}
+                                        </p>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 5. 관리센터 (ManagementView)
+        function ManagementView() {
+            const data = [
+                { time: '00:00', vocs: 30, limit: 100 },
+                { time: '04:00', vocs: 25, limit: 100 },
+                { time: '08:00', vocs: 45, limit: 100 },
+                { time: '12:00', vocs: 85, limit: 100 },
+                { time: '16:00', vocs: 140, limit: 100 },
+                { time: '20:00', vocs: 60, limit: 100 },
+                { time: '24:00', vocs: 35, limit: 100 },
+            ];
+
+            return (
+                <div className="space-y-6 view-enter">
+                    {/* Predictive Maintenance Alert */}
+                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-white/20 p-3 rounded-full">
+                                <Bell size={28} className="text-white" />
+                            </div>
+                            <div>
+                                <span className="bg-white/20 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider mb-2 inline-block">AI 예지보전 알림</span>
+                                <h3 className="text-xl font-bold">1공장 옥상 세정집진기 이상 징후 감지</h3>
+                                <p className="text-amber-100 mt-1 text-sm">
+                                    스크러버 순환수 pH 농도가 기준치(9.5) 이하로 지속 저하됨 (현재 7.2). <br/>
+                                    <strong>조치 권고: 48시간 내에 가성소다(NaOH) 탱크 보충 요망.</strong>
+                                </p>
+                            </div>
+                        </div>
+                        <button className="bg-white text-orange-600 font-bold px-6 py-3 rounded-xl hover:bg-slate-50 transition-colors shadow-sm hidden md:block shrink-0">
+                            약품 발주하기
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Chart Area */}
+                        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                <Activity size={20} className="text-blue-500" /> 실시간 VOCs 배출량 역추적 트렌드 (최근 24시간)
+                            </h3>
+                            <VocsTrendChart data={data} />
+                        </div>
+
+                        {/* Digital Twin Map Mockup */}
+                        <div className="bg-slate-900 rounded-2xl p-6 shadow-sm flex flex-col">
+                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                <Home size={20} className="text-blue-400" /> 역추적 발생원 매핑
+                            </h3>
+                            <div className="flex-1 bg-slate-800 rounded-xl border border-slate-700 relative overflow-hidden flex items-center justify-center p-4 min-h-[220px]">
+                                <div className="w-full h-full relative">
+                                    <div className="absolute top-6 left-6 w-24 h-16 bg-slate-700 border border-slate-600 rounded flex items-center justify-center text-xs text-slate-400">A 공정</div>
+                                    <div className="absolute bottom-6 left-12 w-32 h-20 bg-slate-700 border border-slate-600 rounded flex items-center justify-center text-xs text-slate-400">B 공정</div>
+                                    <div className="absolute top-14 right-6 w-28 h-24 bg-red-900/30 border border-red-500/50 rounded flex flex-col items-center justify-center text-xs text-red-400">
+                                        <span className="relative flex h-3 w-3 mb-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                        </span>
+                                        도장 공정 (배출원)
+                                    </div>
+                                    
+                                    <div className="absolute bottom-2 right-2 text-slate-500 text-xs flex items-center gap-1">
+                                        풍향: 북서풍 <Wind size={14} />
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-slate-400 text-sm mt-4 text-center leading-relaxed">
+                                디지털 트윈 알고리즘 연산 결과, <strong className="text-red-400">우측 도장 공정</strong>에서 악취가 유출 확산된 것으로 분석되었습니다.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BareugoApp />);
+    </script>
+</body>
+</html>
